@@ -1,14 +1,18 @@
 package main
 
 import (
-	"SolBaa/websockets/internal/handlers"
 	"net/http"
+
+	"github.com/SolBaa/websockets/internal/handlers"
 
 	"github.com/bmizerany/pat"
 )
 
 func routes() http.Handler {
 	mux := pat.New()
-	mux.Get("/", handlers.Home)
+	mux.Get("/", http.HandlerFunc(handlers.Home))
+	mux.Get("/ws", http.HandlerFunc(handlers.WsEndpoint))
+
+	return mux
 
 }
