@@ -77,10 +77,20 @@ func ListenforWSChannel() {
 	for {
 		e := <-wsChan
 		switch e.Action {
+
 		case "username":
+
 			clients[e.Conn] = e.Username
 			users := getUserList()
 			response.Action = "list_users"
+			response.ConnectedUsers = users
+			braodcasToAll(response)
+
+		case "left":
+			response.Action = "list_users"
+			delete(clients, e.Conn)
+
+			users := getUserList()
 			response.ConnectedUsers = users
 			braodcasToAll(response)
 
@@ -92,7 +102,9 @@ func ListenforWSChannel() {
 func getUserList() []string {
 	userlist := []string{}
 	for _, x := range clients {
-		userlist = append(userlist, x)
+		if x != "" {
+			userlist = append(userlist, x)
+		}
 	}
 	sort.Strings(userlist)
 	return userlist
