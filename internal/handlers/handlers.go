@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"sort"
 
 	"github.com/CloudyKit/jet/v6"
 	"github.com/gorilla/websocket"
@@ -35,9 +36,10 @@ type WebSocketConnection struct {
 	*websocket.Conn
 }
 type WsJSONResponse struct {
-	Action      string `json:"action"`
-	Message     string `json:"message"`
-	MessageType string `json:"message_type"`
+	Action         string   `json:"action"`
+	Message        string   `json:"message"`
+	MessageType    string   `json:"message_type"`
+	ConnectedUsers []string `json:"connected_users"`
 }
 
 type WsPayload struct {
@@ -74,11 +76,26 @@ func ListenforWSChannel() {
 
 	for {
 		e := <-wsChan
-		response.Action = "Got Here"
-		response.Message = fmt.Sprintf("Some Message, and action wwasd %s", e.Action)
-		braodcasToAll(response)
+		switch e.Action {
+		case "username":
+			clients[e.Conn] = e.Username
+			users := getUserList()
+			response.Action = "list_users"
+			response.ConnectedUsers = users
+			braodcasToAll(response)
+
+		}
 	}
 
+}
+
+func getUserList() []string {
+	userlist := []string{}
+	for _, x := range clients {
+		userlist = append(userlist, x)
+	}
+	sort.Strings(userlist)
+	return userlist
 }
 
 func braodcasToAll(response WsJSONResponse) {
@@ -105,9 +122,9 @@ func ListenForWS(conn *WebSocketConnection) {
 	var payload WsPayload
 
 	for {
-		err := conn.ReadJSON(payload)
+		err := conn.ReadJSON(&payload)
 		if err != nil {
-			log.Println(err)
+
 		} else {
 			payload.Conn = *conn
 			wsChan <- payload
